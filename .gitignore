@@ -1,0 +1,69 @@
+
+## Vision
+Build a scalable AI-powered commerce platform.
+
+## Tech Stack
+
+- Next.js
+- FastAPI
+- PostgreSQL
+- Redis
+- RabbitMQ
+- Qdrant
+- MinIO
+- Docker
+- Kubernetes
+- MLflow
+- PyTorch
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environments
+venv/
+.venv/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Docker
+*.pid
+
+# Alembic cache
+alembic/__pycache__/
+
+# pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Node
+node_modules/
+.next/
+
+# Build
+dist/
+build/
+
+## Milestones
+
+- Sprint 1: Infrastructure
+- Sprint 2: Recommendation Engine
+- Sprint 3: Semantic Search
+- Sprint 4: AI Shopping Assistant
+- Sprint 5: Deployment

@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+pika
+python-dotenv
+pydantic
+pydantic-settings
+alembic
+qdrant-client
+sentence-transformers

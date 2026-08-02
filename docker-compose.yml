@@ -1,0 +1,149 @@
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - amazon_network
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - amazon_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - amazon_network
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - amazon_network
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - amazon_network
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - qdrant
+      - minio
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    networks:
+      - amazon_network
+
+  recommendation_service:
+    build:
+      context: ./services/recommendation-service
+    container_name: recommendation_service
+    restart: unless-stopped
+    env_file:
+      - ./services/recommendation-service/.env
+    depends_on:
+      - postgres
+      - rabbitmq
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./services/recommendation-service:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    networks:
+      - amazon_network
+
+  recommendation_worker:
+    build:
+      context: ./services/recommendation-service
+    container_name: recommendation_worker
+    restart: unless-stopped
+    env_file:
+      - ./services/recommendation-service/.env
+    depends_on:
+      - rabbitmq
+      - postgres
+    volumes:
+      - ./services/recommendation-service:/app
+    command: python -u -m app.worker
+    networks:
+      - amazon_network
+
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    restart: unless-stopped
+    command: npm run dev -- --hostname 0.0.0.0
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - amazon_network
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  minio_data:
+
+networks:
+  amazon_network:
+    driver: bridge
